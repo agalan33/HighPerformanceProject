@@ -1,9 +1,8 @@
-/* C program for Merge Sort */
+#include <omp.h>
 #include <stdlib.h> 
 #include <stdio.h>
 #include <time.h>
 FILE * fp;
-
 // Merges two subarrays of arr[]. 
 // First subarray is arr[l..m] 
 // Second subarray is arr[m+1..r] 
@@ -65,7 +64,7 @@ void merge(int *arr, int l, int m, int r)
 
 /* l is for left index and r is right index of the 
 sub-array of arr to be sorted */
-void mergeSort(int *arr, int l, int r) 
+void mergeSort(int arr[], int l, int r) 
 { 
 	if (l < r) 
 	{ 
@@ -73,11 +72,22 @@ void mergeSort(int *arr, int l, int r)
 		// large l and h 
 		int m = l+(r-l)/2; 
 
-		// Sort first and second halves 
-		mergeSort(arr, l, m); 
-		mergeSort(arr, m+1, r); 
+		// // Sort first and second halves 
+		#pragma omp parallel sections num_threads(48)
+		{
 
-		merge(arr, l, m, r); 
+
+		#pragma omp section
+		{
+				mergeSort(arr,l,m); //call 1
+		}
+		#pragma omp section
+		{
+				mergeSort(arr,m+1,r); //call 2
+		} 
+	}
+
+		merge(arr, l, m, r);
 	} 
 } 
 
@@ -89,7 +99,7 @@ void printArray(int A[], int size)
 	for (i=0; i < size; i++) 
 		printf("%d ", A[i]); 
 	printf("\n"); 
-}
+} 
 
 void benchMark(int max){
 	int *arr = (int *)malloc(max*sizeof(int));
@@ -106,16 +116,16 @@ void benchMark(int max){
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 	// printf("\nSorted array is \n"); 
 	// printArray(arr, max);
-	fprintf (fp, " %d , %f\n", max, time_spent);
+	fprintf (fp, "%d , %f\n", max, time_spent);
 	// printf("Done with %d\n", max);
 	free(arr);
 } 
 
 /* Driver program to test above functions */
 int main(){
-	int data = 10000;
+	int data = 1000;
    /* open the file for writing*/
-   fp = fopen ("MergeSortSequential.txt","w"); 
+   fp = fopen ("MergeSortOMP48Threads.txt","w"); 
    while(data <= 100000000){
    	benchMark(data);
    	data = data * 10;
@@ -124,4 +134,4 @@ int main(){
     fclose (fp);
     // printf("Done!\n");
 	return 0; 
-} 
+}
